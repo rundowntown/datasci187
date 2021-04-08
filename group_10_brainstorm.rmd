@@ -1,0 +1,223 @@
+---
+title: "Data Sci: Group 10 Draft/Outline"
+author: "Matthew O'Donnell, Sean Sander, Daniel Forcade"
+date: "4/8/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE, echo = FALSE, warning = FALSE}
+library(rmdformats)
+```
+```{r, warning = FALSE, echo = FALSE, message = FALSE}
+library("ggplot2")
+library("dplyr")
+library("gridExtra")
+library("quantreg")
+library("gganimate")
+library("animation")
+library("transformr")
+library("viridis")
+library("tidyverse")
+library("ggsci")
+library("ggpubr")
+library("gganimate")
+library("magick")
+library("ggthemes")
+library("tidyverse")
+knitr::opts_chunk$set(echo = TRUE) 
+knitr::opts_chunk$set(fig.width=10, fig.height=10)  
+```
+
+
+## 1.  Introduction:
+
+* What is the source of the data?: *Answer*
+* Where and when was it created?: *Answer*
+* Is it a sample: *No*
+* Do you suspect any sampling bias: *Answer*
+* Was it an experimental or an observational study: *Observational - not a study*
+* How were measurements taken: *NYPD Data*
+* Do you suspect any bias in the questions or measurements: *The exploration of this question is an auxiliary part of our analysis*
+* Why is this data of interest to you: *Answer*
+* What kind of data cleaning was necessary: *Answer - found in data cleaning section*
+
+
+
+
+
+## 2.  Data Visualizations:  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 3.  Machine Learning: To Do Later:
+
+Ideas:
+
+* Compare precincts against normal distribution
+* Compare precincts against eachother
+
+* Compare officer race vs complaint outcome
+* Compare complainant race vs complaint outcome
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 4.  Conclusions:  
+
+
+
+
+
+
+
+## 5.  Limitations/Recommendations:  
+
+* NYPD had a large amount of time to manipulate data before public release
+* Second organization accessed data-set before public release (increased potential for manipulation)
+
+* Research into precinct locations would allow borough or location partition for data analysis
+
+
+
+
+
+
+## Names of Variables in Data Set:
+```{r}
+allegations <- read.csv("allegations_202007271729.csv")
+
+names(allegations)
+```
+
+
+## New
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 1.  
+Ran a histogram of complaint type, separated by year.  Noticed that years 1985 ~ 2000 have a limited amount of data.  May need to research as to why.
+
+```{r, warning = FALSE, message = FALSE}
+
+### Complaint Type Histogram
+ggplot(data = allegations,
+       mapping = aes(x = fado_type, fill = fado_type, alpha = .8))+
+  geom_histogram(stat = "count")+
+  facet_wrap(~ year_received)+
+  labs(title = "Complaint Type Histogram through Year", x = "Complaint Type", y = "Count", caption = "Figure 1", subtitle = "1985-2020")+
+  theme_dark()+
+  theme(axis.text.x = element_text(angle = 90, vjust = -.1))+
+  scale_fill_tron(name = "Complaint Type")+
+  guides(alpha = FALSE)
+```
+
+## 2.  
+Figure 2 is a density bar graph of complaint ethnicity, separated by complaint type.  I wanted to see if there were any trends in complaints depending on ethnicity of the victim.  
+I noticed in this graph that there are a lot of _____ or 'blank', 'unfilled' categories in this data set.  These are in addition to several 'NA' or 'Unknown' categories.  We will likely have to decide on a path on how to rewrite, categorize, or otherwise parse the missing data.
+
+```{r, warning = FALSE, message = FALSE}
+## complaint ethnicity
+ggplot(data = allegations,
+       mapping = aes(x = complainant_ethnicity, fill = complainant_ethnicity,
+                     alpha = .9))+
+  geom_bar(color = "black")+
+  facet_wrap(~fado_type)+
+  labs(title = "Complaintant Ethnicity Bar Chart", subtitle = "Seperated by Complaint Type.  Note: First Value is Blank", caption = "Figure 2", x = "Complaint Ethnicity")+
+  theme_dark()+
+  theme(axis.text.x = element_text(angle = 90))+
+  scale_fill_discrete(name = "Complaint Ethnicity")+
+  guides(alpha = FALSE)
+```
+
+## 3.  
+Figure 3 is a density bar graph of `board_disposition`, which I believe to be the outcome of the complaint - separated by `mos_ethnicity`, which I believe to be officer ethnicity.  
+A quick research into the data lead me to believe that 'mos' in this data set stands for **Member of Service**, or police officer.  
+Here I was checking for patterns if there were any obvious outcome bias depending on officer ethnicity.
+
+```{r, warning = FALSE, message = FALSE}
+## Officer Race by Board Disposition
+ggplot(data = allegations,
+       mapping = aes(x = board_disposition, fill = board_disposition))+
+  geom_bar(color = "black")+
+  facet_wrap(~mos_ethnicity)+
+  theme_cleveland()+
+  theme(axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())+
+  labs(title = "Officer Complaint Outcome Bar Chart", subtitle = "Seperated by Officer Ethnicity", caption = "Figure 3", x = "Board Disposition (Complaint Outcome)")+
+  scale_fill_futurama(name = "Complaint Outcome")
+```
+  
+  
+## 4.  
+Here I did a quick scan on compliant type by `complainant_gender`.  As the graph-set shows, there are a lot of different and unknown gender variables for complainants.  If we want to work with complainant gender, we may want to limit or parse the 4 low-value and/or missing categories (Transman, Not described, Transwoman, Gender non-conforming)
+
+```{r, warning = FALSE, message = FALSE}
+## Gender Complaints
+
+ggplot(data = allegations,
+       mapping = aes(x = fado_type, fill = fado_type,
+                     alpha = .9))+
+  geom_bar(color = "black")+
+  facet_wrap(~complainant_gender)+
+  labs(title = "Complaint Type", subtitle = "Seperated by Gender", caption = "Figure 4", x = "Complaint Type")+
+  theme_gdocs()+
+  theme(axis.text.x = element_text(angle = 90))+
+  scale_fill_jco(name = "Complaint Type")+
+  guides(alpha = FALSE)
+```

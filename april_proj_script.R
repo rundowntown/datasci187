@@ -15,6 +15,22 @@ allegations$full_name <- paste(allegations$first_name, allegations$last_name)
 
 
 
+## Board disposition transformation
+## Substantiated variants merged into one category: 'Substantiated"
+
+table(allegations$board_disposition)
+
+allegations$board_disposition[allegations$board_disposition == 'Substantiated (Charges)'] <- 'Substantiated'
+allegations$board_disposition[allegations$board_disposition == 'Substantiated (Command Discipline A)'] <- 'Substantiated'
+allegations$board_disposition[allegations$board_disposition == 'Substantiated (Command Discipline B)'] <- 'Substantiated'
+allegations$board_disposition[allegations$board_disposition == 'Substantiated (Command Discipline)'] <- 'Substantiated'
+allegations$board_disposition[allegations$board_disposition == 'Substantiated (Command Lvl Instructions)'] <- 'Substantiated'
+allegations$board_disposition[allegations$board_disposition == 'Substantiated (Formalized Training)'] <- 'Substantiated'
+allegations$board_disposition[allegations$board_disposition == 'Substantiated (Instructions)'] <- 'Substantiated'
+allegations$board_disposition[allegations$board_disposition == 'Substantiated (MOS Unidentified)'] <- 'Substantiated'
+allegations$board_disposition[allegations$board_disposition == 'Substantiated (No Recommendations)'] <- 'Substantiated'
+
+
 
 
 ###
@@ -169,4 +185,261 @@ ggplot()+
   geom_bar()+
   labs(title = "NYDP Allegations Complaintant Ethnicity", subtitle = "No Precinct 75")+
   theme(axis.text.x=element_blank())
+
+
+
+
+
+
+
+
+
+
+
+
+############ Last 10 years #############
+
+
+## last 10 years
+recent_allegations <- allegations %>% 
+  filter(allegations$year_received >= 2009)
+
+precinct_75_last10 <- recent_allegations %>% 
+  filter(recent_allegations$precinct == 75)
+
+
+##### Allegations Data minus Precinct 75 #####
+allegations_no_75_last10 <- recent_allegations %>% 
+  filter(recent_allegations$precinct != 75)
+
+
+## Board disposition 75 vs field
+
+#75
+g1 <- ggplot(data = precinct_75_last10,
+             mapping = aes(x = board_disposition, y = ..count.., fill = board_disposition))+
+  geom_bar()+
+  labs(title = "Precinct 75 Board Disposition", subtitle = "Last 10 Years")+
+  theme(axis.text.x=element_text(angle = 45, hjust = 1, size = 10))+
+  guides(fill = FALSE)+
+  ylim(0,1000)
+
+## Rest of precincts
+g2 <- ggplot(data = allegations_no_75_last10,
+             mapping = aes(x = board_disposition, y = ..count../77, fill = board_disposition))+
+  geom_bar()+
+  labs(title = "NYDP All Other Precincts: Average", subtitle = "Last 10 Years")+
+  theme(axis.text.x=element_text(angle = 45, hjust = 1, size = 10))+
+  guides(fill = FALSE)+
+  ylim(0,1000)
+
+ggarrange(g1,g2)
+
+
+## Number of precints in last 10 years (not including 75): 77
+number_of_precincts <- allegations_no_75_last10 %>% 
+  group_by(precinct) %>% tally
+
+
+
+
+
+#### Complaints 75 vs Field last 10
+
+g1 <- ggplot(data = precinct_75_last10,
+             mapping = aes(x = fado_type, y = ..count.., fill = board_disposition))+
+  geom_bar()+
+  labs(title = "Precinct 75 Complaints", subtitle = "Last 10 Years")+
+  theme(axis.text.x=element_text(angle = 45, hjust = 1, size = 10))+
+  guides(fill = FALSE)+
+  ylim(0,1000)
+
+## Rest of precincts
+g2 <- ggplot(data = allegations_no_75_last10,
+             mapping = aes(x = fado_type, y = ..count../77, fill = board_disposition))+
+  geom_bar()+
+  labs(title = "NYPD All Other Precinct Complaints, Average", subtitle = "Last 10 Years")+
+  theme(axis.text.x=element_text(angle = 45, hjust = 1, size = 10))+
+  guides()+
+  ylim(0,1000)
+
+ggarrange(g1,g2)
+
+
+
+
+##### Ethnicity
+
+
+g1 <- ggplot(data = precinct_75_last10,
+             mapping = aes(x = fado_type, y = ..count.., fill = board_disposition))+
+  geom_bar()+
+  labs(title = "Precinct 75 Complaints", subtitle = "Last 10 Years")+
+  theme(axis.text.x=element_text(angle = 45, hjust = 1, size = 10))+
+  facet_wrap(~complaintant_ethnicity)+
+  guides(fill = FALSE)+
+  ylim(0,1000)
+
+## Rest of precincts
+g2 <- ggplot(data = allegations_no_75_last10,
+             mapping = aes(x = fado_type, y = ..count../77, fill = board_disposition))+
+  geom_bar()+
+  labs(title = "NYPD All Other Precinct Complaints, Average", subtitle = "Last 10 Years")+
+  theme(axis.text.x=element_text(angle = 45, hjust = 1, size = 10))+
+  guides()+
+  ylim(0,1000)
+
+ggarrange(g1,g2)
+
+
+
+
+
+
+
+
+g1 <- ggplot(data = precinct_75_last10,
+       mapping = aes(x = complainant_ethnicity, fill = complainant_ethnicity,
+                     alpha = .9))+
+  geom_bar(color = "black")+
+  facet_wrap(~fado_type)+
+  labs(title = "Complaintant Ethnicity Bar Chart", subtitle = "Seperated by Complaint Type.  Note: First Value is Blank", caption = "Figure 2", x = "Complaint Ethnicity")+
+  theme_dark()+
+  theme(axis.text.x = element_text(angle = 90))+
+  scale_fill_discrete(name = "Complaint Ethnicity")+
+  guides(alpha = FALSE)
+
+g2 <- ggplot(data = allegations_no_75_last10,
+       mapping = aes(x = complainant_ethnicity, fill = complainant_ethnicity,
+                     alpha = .9))+
+  geom_bar(color = "black")+
+  facet_wrap(~fado_type)+
+  labs(title = "Complaintant Ethnicity Bar Chart", subtitle = "Seperated by Complaint Type.  Note: First Value is Blank", caption = "Figure 2", x = "Complaint Ethnicity")+
+  theme_dark()+
+  theme(axis.text.x = element_text(angle = 90))+
+  scale_fill_discrete(name = "Complaint Ethnicity")+
+  guides(alpha = FALSE)
+
+ggarrange(g1,g2)
+
+
+
+
+
+
+
+
+
+
+##### Board Disposition by Officer Ethnicity | Last 10 Years
+
+
+## Filter extremely low value
+allegations_no_75_last10_OE <- allegations_no_75_last10 %>% 
+  filter(mos_ethnicity != "American Indian")
+
+
+#75
+g1 <- ggplot(data = precinct_75_last10,
+       mapping = aes(x = board_disposition, fill = board_disposition))+
+  geom_bar(color = "black")+
+  facet_wrap(~mos_ethnicity)+
+  theme_cleveland()+
+  theme(axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())+
+  labs(title = "Precinct 75 Board Disposition Outcome", subtitle = "Seperated by Officer Ethnicity", caption = "Last 10 Years", x = "Board Disposition (Complaint Outcome)")+
+  scale_fill_futurama(name = "Complaint Outcome")+
+  ylim(0,470)
+
+#NYPD
+g2<- ggplot(data = allegations_no_75_last10_OE,
+       mapping = aes(x = board_disposition, y = ..count../77, fill = board_disposition))+
+  geom_bar(color = "black")+
+  facet_wrap(~mos_ethnicity)+
+  theme_cleveland()+
+  theme(axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())+
+  labs(title = "NYPD Board Disposition Outcome", subtitle = "Seperated by Officer Ethnicity", caption = "", x = "Board Disposition (Complaint Outcome)")+
+  scale_fill_futurama(name = "Complaint Outcome")+
+  ylim(0,460)
+
+
+ggarrange(g1,g2)
+
+
+#########
+
+
+
+######## Outcome by Complainant Ethnicity
+## Considered filter(), decided was better to include in combined group
+
+## Low Value Clean
+#75
+precinct_75_last10_CE <- precinct_75_last10
+precinct_75_last10_CE$complainant_ethnicity[precinct_75_last10_CE$complainant_ethnicity == 'American Indian'] <- 'Other Race'
+precinct_75_last10_CE$complainant_ethnicity[precinct_75_last10_CE$complainant_ethnicity == 'Refused'] <- 'Other Race'
+precinct_75_last10_CE$complainant_ethnicity[precinct_75_last10_CE$complainant_ethnicity == 'Unknown'] <- 'Other Race'
+precinct_75_last10_CE$complainant_ethnicity[precinct_75_last10_CE$complainant_ethnicity == ''] <- 'Other Race'
+## Rest of NYPD
+allegations_no_75_last10_CE <- allegations_no_75_last10
+allegations_no_75_last10_CE$complainant_ethnicity[allegations_no_75_last10_CE$complainant_ethnicity == 'American Indian'] <- 'Other Race'
+allegations_no_75_last10_CE$complainant_ethnicity[allegations_no_75_last10_CE$complainant_ethnicity == 'Refused'] <- 'Other Race'
+allegations_no_75_last10_CE$complainant_ethnicity[allegations_no_75_last10_CE$complainant_ethnicity == 'Unknown'] <- 'Other Race'
+allegations_no_75_last10_CE$complainant_ethnicity[allegations_no_75_last10_CE$complainant_ethnicity == ''] <- 'Other Race'
+
+#75
+g1 <- ggplot(data = precinct_75_last10_CE,
+             mapping = aes(x = board_disposition, fill = board_disposition))+
+  geom_bar(color = "black")+
+  facet_wrap(~complainant_ethnicity)+
+  theme_cleveland()+
+  theme(axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())+
+  labs(title = "Precinct 75 Board Disposition Outcome", subtitle = "Seperated by Complainant Ethnicity", caption = "Last 10 Years", x = "Board Disposition (Complaint Outcome)")+
+  scale_fill_futurama(name = "Complaint Outcome")+
+  ylim(0,540)
+
+#NYPD
+g2<- ggplot(data = allegations_no_75_last10_CE,
+            mapping = aes(x = board_disposition, y = ..count../77, fill = board_disposition))+
+  geom_bar(color = "black")+
+  facet_wrap(~complainant_ethnicity)+
+  theme_cleveland()+
+  theme(axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())+
+  labs(title = "NYPD Board Disposition Outcome", subtitle = "Seperated by Complainant Ethnicity", caption = "", x = "Board Disposition (Complaint Outcome)")+
+  scale_fill_futurama(name = "Complaint Outcome")+
+  ylim(0,540)
+
+
+ggarrange(g1,g2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#
+
+precinct_75_last10_CE <- precinct_75_last10 %>% 
+  filter(complainant_ethnicity != "American Indian" & complainant_ethnicity != "Refused" & complainant_ethnicity != "Unknown" & complainant_ethnicity != '')
+
+allegations_no_75_last10_CE <- allegations_no_75_last10 %>% 
+  filter(complainant_ethnicity != "American Indian" & complainant_ethnicity != "Refused" & complainant_ethnicity != "Unknown" & complainant_ethnicity != '')
+
+
 

@@ -4,10 +4,12 @@ library(ggplot2)
 library(dplyr)
 library(ggrepel)
 
+
+## Read in data
 allegations <- read.csv("allegations_202007271729.csv")
 
+## Check names
 names(allegations)
-
 
 
 ###### New Column: Officer Full Name (combined first and last)
@@ -92,16 +94,16 @@ ggplot(data = precinct_freq,
 
 ## Precinct 75 Notes:
 
-* Historically corrupt precinct in NYPD
-* Covers an area in Brooklyn, NY
-* By far the most numerous complain precinct in our data-set
-
-
-NYPD Page: https://www1.nyc.gov/site/nypd/bureaus/patrol/precincts/75th-precinct.page
-
-Documentary Wikipedia Info: https://en.wikipedia.org/wiki/The_Seven_Five
-
-Recent article on misconduct complaints: https://theintercept.com/2020/08/23/nypd-75th-precinct-police-misconduct/
+# * Historically corrupt precinct in NYPD
+# * Covers an area in Brooklyn, NY
+# * By far the most numerous complain precinct in our data-set
+# 
+# 
+# NYPD Page: https://www1.nyc.gov/site/nypd/bureaus/patrol/precincts/75th-precinct.page
+# 
+# Documentary Wikipedia Info: https://en.wikipedia.org/wiki/The_Seven_Five
+# 
+# Recent article on misconduct complaints: https://theintercept.com/2020/08/23/nypd-75th-precinct-police-misconduct/
 
 
 
@@ -236,7 +238,7 @@ g2 <- ggplot(data = allegations_no_75_last10,
 ggarrange(g1,g2)
 
 
-## Number of precints in last 10 years (not including 75): 77
+## Number of precincts in last 10 years (not including 75): 77
 number_of_precincts <- allegations_no_75_last10 %>% 
   group_by(precinct) %>% tally
 
@@ -276,9 +278,9 @@ g1 <- ggplot(data = precinct_75_last10,
   geom_bar()+
   labs(title = "Precinct 75 Complaints", subtitle = "Last 10 Years")+
   theme(axis.text.x=element_text(angle = 45, hjust = 1, size = 10))+
-  facet_wrap(~complaintant_ethnicity)+
   guides(fill = FALSE)+
   ylim(0,1000)
+
 
 ## Rest of precincts
 g2 <- ggplot(data = allegations_no_75_last10,
@@ -299,7 +301,7 @@ ggarrange(g1,g2)
 
 
 g1 <- ggplot(data = precinct_75_last10,
-       mapping = aes(x = complainant_ethnicity, fill = complainant_ethnicity,
+       mapping = aes(x = complainant_ethnicity, y = ..count.., fill = complainant_ethnicity,
                      alpha = .9))+
   geom_bar(color = "black")+
   facet_wrap(~fado_type)+
@@ -307,10 +309,11 @@ g1 <- ggplot(data = precinct_75_last10,
   theme_dark()+
   theme(axis.text.x = element_text(angle = 90))+
   scale_fill_discrete(name = "Complaint Ethnicity")+
-  guides(alpha = FALSE)
+  guides(alpha = FALSE)+
+  ylim(0,600)
 
 g2 <- ggplot(data = allegations_no_75_last10,
-       mapping = aes(x = complainant_ethnicity, fill = complainant_ethnicity,
+       mapping = aes(x = complainant_ethnicity, y = ..count../77, fill = complainant_ethnicity,
                      alpha = .9))+
   geom_bar(color = "black")+
   facet_wrap(~fado_type)+
@@ -318,7 +321,8 @@ g2 <- ggplot(data = allegations_no_75_last10,
   theme_dark()+
   theme(axis.text.x = element_text(angle = 90))+
   scale_fill_discrete(name = "Complaint Ethnicity")+
-  guides(alpha = FALSE)
+  guides(alpha = FALSE)+
+  ylim(0,600)
 
 ggarrange(g1,g2)
 
@@ -423,9 +427,10 @@ ggarrange(g1,g2)
 
 
 
+######
 
 
-
+ggplot(data = allegations
 
 
 

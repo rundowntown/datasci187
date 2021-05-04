@@ -1,0 +1,193 @@
+---
+title: "Final Project ML"
+author: "Sean Sander"
+date: "4/30/21"
+output: 
+  html_document:
+  toc: true
+---
+
+```{r, message=FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(psych)
+library(rpart)
+library(rpart.plot)
+library(lattice)
+library(Cubist)
+library(tidyverse)
+library(C50)
+library(OneR)
+library(class)
+library(gmodels)
+
+police <- read.csv("allegations_202007271729.csv", na.strings=c("NA","", " "))
+police <- na.omit(police)
+
+keeps <- c("mos_ethnicity",
+           "mos_gender", "fado_type", "precinct", "contact_reason",
+           "outcome_description", "complainant_gender", "board_disposition",
+           "complainant_ethnicity")
+
+police <- subset(police, select = keeps)
+
+# police$allegation <- ifelse(police$allegation == "Threat re: removal to hospital", "Removal to hospital", police$allegation)
+# 
+# police$allegation <- ifelse(str_detect(police$allegation, "Sexual Miscon"),
+#                             "Sexual Misconduct", police$allegation)
+# police$allegation <- ifelse(str_detect(police$allegation, "Sex Miscon"),
+#                             "Sexual Misconduct", police$allegation)
+
+police$contact_reason <- ifelse(str_detect(police$contact_reason, "suspected"),
+                            "Suspected Crime", police$contact_reason)
+police$contact_reason <- ifelse(str_detect(police$contact_reason, "EDP"),
+                            "EDP aided case", police$contact_reason)
+police$contact_reason <- ifelse(str_detect(police$contact_reason, "Traffic Incident"),
+                            "Traffic accident", police$contact_reason)
+police$outcome_description <- ifelse(str_detect(police$outcome_description, "Summons -"),
+                            "Summons", police$outcome_description)
+police$board_disposition <- ifelse(str_detect(police$board_disposition, "Substantiated"),
+                                              "Substantiated", police$board_disposition)
+police$complainant_ethnicity_alt <- ifelse(police$complainant_ethnicity %in% 
+                                             c("Black", "Hispanic", "Asian", "American Indian"),
+                                           "POC", police$complainant_ethnicity)
+police <- subset(police, !police$complainant_ethnicity %in% c("Other Race", "Refused", "Unknown"))
+police <- subset(police, !police$precinct == 1000)
+police <- subset(police, !police$contact_reason == "Arrest/Complainant")
+# police$complainant_ethnicity <- ifelse(police$complainant_ethnicity
+#                                         %in% c("American Indian",
+#                                                "Black",
+#                                                "Hispanic",
+#                                                "Asian"),
+#                                        "POC", police$complainant_ethnicity)
+
+precinct_75 <- subset(police, precinct == 75)
+
+precincts_other <- police[!(police$precinct %in% precinct_75$precinct),]
+```
+
+```{r create training and test sets, warning=FALSE}
+RNGversion('3.5.3')
+set.seed(111)
+precinct_sample <- sample(1:118, 100)
+RNGversion(getRversion())
+
+precinct_sample[1:10]
+
+# TODO make other skin colors in properotion?
+
+# No sample needed (32)
+precinct_75_white <- subset(precinct_75, complainant_ethnicity == "White")
+
+# Need to sample 32
+precinct_75_black <- subset(precinct_75, complainant_ethnicity == "Black")
+precinct_75_black_sample <- sample(1:1330, 32)
+precinct_75_black[precinct_75_black_sample,]
+
+# No sample needed (22)
+precinct_75_asian <- subset(precinct_75, complainant_ethnicity == "Asian")
+
+# Need to sample 32
+precinct_75_hispanic <- subset(precinct_75, complainant_ethnicity == "Hispanic")
+precinct_75_hispanic_sample <- sample(1:292, 32)
+
+precinct_75 <- rbind(precinct_75_white, precinct_75_black[precinct_75_black_sample,],
+                     precinct_75_asian, precinct_75_hispanic[precinct_75_hispanic_sample,])
+
+precinct_75$complainant_ethnicity <- ifelse(precinct_75$complainant_ethnicity %in%
+                                              c("Hispanic", "Black", "Asian"), "POC", "White")
+precinct_train <- precinct_75[precinct_sample,]
+precinct_test <- precinct_75[-precinct_sample,]
+
+```
+```{r decision tree}
+precinct_75_model <- C5.0(x = precinct_train[,1:8],
+                          y = as.factor(precinct_train$complainant_ethnicity))
+precinct_75_model
+summary(precinct_75_model)
+```
+
+```{r boosted decision tree}
+precinct_75_model2 <- C5.0(x = precinct_train[,1:7],
+                          y = as.factor(precinct_train$complainant_ethnicity),
+                          trials = 10)
+precinct_75_model2
+summary(precinct_75_model2)
+```
+
+```{r rule learner}
+precinct_75_c5rules <- C5.0(as.factor(complainant_ethnicity) ~ .,
+                    data = precinct_75,
+                    rules = TRUE)
+summary(precinct_75_c5rules)
+```
+
+```{r all police training and test sets, warning=FALSE}
+RNGversion('3.5.3')
+set.seed(111)
+police_sample <- sample(1:26283, 3000)
+RNGversion(getRversion())
+
+police_sample[1:10]
+
+police_alt <- police[,!names(police) %in% c("complainant_ethnicity")]
+police_alt$precinct <- as.character(police_alt$precinct)
+
+police_train <- police_alt[police_sample,]
+police_test <- police_alt[-police_sample,]
+
+
+```
+
+```{r all police decision tree}
+matrix_dimensions <- list(c("POC", "White"), c("POC", "White"))
+names(matrix_dimensions) <- c("predicted", "actual")
+
+error_cost <- matrix(c(0, 1, 2, 0),
+                     nrow = 2, dimnames = matrix_dimensions)
+
+error_cost
+
+police_model <- C5.0(x = police_train[,1:8],
+                          y = as.factor(police_train$complainant_ethnicity_alt),
+                     costs = error_cost)
+police_model
+summary(police_model)
+```
+```{r}
+police_model_pred <- predict(police_model, police_train)
+CrossTable(police_train$complainant_ethnicity_alt, police_model_pred,
+           prop.chisq = FALSE, prop.c = FALSE,
+           prop.r = FALSE, dnn = c('actual data', 'predicted data'))
+```
+
+
+```{r police boosted decision tree}
+police_model2 <- C5.0(x = police_train[,1:8],
+                          y = as.factor(police_train$complainant_ethnicity_alt),
+                      trials = 40)
+police_model2
+summary(police_model2)
+
+police_pred2 <- predict(police_model2, police_test)
+CrossTable(police_test$complainant_ethnicity_alt, police_pred2,
+           prop.chisq = FALSE, prop.c = FALSE,
+           prop.r = FALSE, dnn = c('actual data', 'predicted data'))
+```
+
+
+```{r police rule learner}
+
+police_c5rules <- C5.0(as.factor(complainant_ethnicity_alt) ~ .,
+                    data = police_alt,
+                    rules = TRUE)
+summary(police_c5rules)
+```
+
+```{r police rule learner find precinct}
+police_alt2 <- police_alt[,!names(police_alt) %in% c("precinct")]
+police_alt$target_precinct <- ifelse(police$precinct == "75", "75", "Other")
+police_c5rules2 <- C5.0(as.factor(target_precinct) ~ .,
+                    data = police_alt2)
+summary(police_c5rules2)
+```
+
